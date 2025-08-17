@@ -48,10 +48,13 @@ void naive_mat_mul(double *A, double *B, double *C, int size) {
  * @param 		size 		dimension of the matrices
  */
 void loop_opt_mat_mul(double *A, double *B, double *C, int size){
-//----------------------------------------------------- Write your code here ----------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------------------------------------------
-
+	for (int i = 0; i < size; i++) {
+		for (int k = 0; k < size; k++) {
+			for (int j = 0; j < size; j ++) {
+				C[i * size + j] += A[i * size + k] * B[k * size + j];
+			}
+		}
+	}
 }
 
 

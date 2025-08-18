@@ -20,7 +20,7 @@
 
 // defines
 // NOTE: you can change this value as per your requirement
-#define TILE_SIZE	100		// size of the tile for blocking
+#define TILE_SIZE	8 // size of the tile for blocking
 
 /**
  * @brief 		Performs matrix multiplication of two matrices.
@@ -50,8 +50,15 @@ void naive_mat_mul(double *A, double *B, double *C, int size) {
 void loop_opt_mat_mul(double *A, double *B, double *C, int size){
 	for (int i = 0; i < size; i++) {
 		for (int k = 0; k < size; k++) {
-			for (int j = 0; j < size; j ++) {
+			for (int j = 0; j < size; j += 8) {
 				C[i * size + j] += A[i * size + k] * B[k * size + j];
+				C[i * size + j + 1] += A[i * size + k] * B[k * size + j + 1];
+				C[i * size + j + 2] += A[i * size + k] * B[k * size + j + 2];
+				C[i * size + j + 3] += A[i * size + k] * B[k * size + j + 3];
+				C[i * size + j + 4] += A[i * size + k] * B[k * size + j + 4];
+				C[i * size + j + 5] += A[i * size + k] * B[k * size + j + 5];
+				C[i * size + j + 6] += A[i * size + k] * B[k * size + j + 6];
+				C[i * size + j + 7] += A[i * size + k] * B[k * size + j + 7];
 			}
 		}
 	}
@@ -70,11 +77,23 @@ void loop_opt_mat_mul(double *A, double *B, double *C, int size){
  * 				You can assume that the matrices are square matrices.
 */
 void tile_mat_mul(double *A, double *B, double *C, int size, int tile_size) {
-//----------------------------------------------------- Write your code here ----------------------------------------------------------------
-    
-
-//-------------------------------------------------------------------------------------------------------------------------------------------
-    
+	// to iterate over each blocks
+	// (0, 0) (0, 1)
+	// (1, 0) (1, 1)
+	// each block of size (tile_size, tile_size)
+	for (int i = 0; i < size / tile_size; i++) {
+		for (int j = 0; j < size / tile_size; j++) {
+			for (int k = 0; k < size / tile_size; k++) {
+				for (int ii = 0; ii < tile_size; ii++) {
+					for (int jj = 0; jj < tile_size; jj++) {
+						for (int kk = 0; kk < tile_size; kk++) {
+							C[(i * tile_size + ii) * size + (j * tile_size + jj)] += A[(i * tile_size + ii) * size + (k * tile_size + kk)] * B[(k * tile_size + kk) * size + (j * tile_size + jj)];
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 /**

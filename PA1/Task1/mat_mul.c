@@ -81,13 +81,14 @@ void tile_mat_mul(double *A, double *B, double *C, int size, int tile_size) {
 	// (0, 0) (0, 1)
 	// (1, 0) (1, 1)
 	// each block of size (tile_size, tile_size)
-	for (int i = 0; i < size / tile_size; i++) {
-		for (int j = 0; j < size / tile_size; j++) {
-			for (int k = 0; k < size / tile_size; k++) {
-				for (int ii = 0; ii < tile_size; ii++) {
-					for (int jj = 0; jj < tile_size; jj++) {
-						for (int kk = 0; kk < tile_size; kk++) {
-							C[(i * tile_size + ii) * size + (j * tile_size + jj)] += A[(i * tile_size + ii) * size + (k * tile_size + kk)] * B[(k * tile_size + kk) * size + (j * tile_size + jj)];
+	for (int i = 0; i < size; i += tile_size) {
+		for(int j = 0; j < size; j += tile_size) {
+			for (int k = 0; k < size; k += tile_size) {
+				for (int ii = i; ii < i + tile_size; ii++) {
+					for (int kk = k; kk < k + tile_size; kk++) {
+						double tempA = A[ii * size + kk];
+						for (int jj = j; jj < j + tile_size; jj++) {
+							C[ii * size + jj] += tempA * B[kk * size + jj];
 						}
 					}
 				}

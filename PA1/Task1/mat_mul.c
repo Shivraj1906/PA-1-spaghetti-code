@@ -20,7 +20,7 @@
 
 // defines
 // NOTE: you can change this value as per your requirement
-#define TILE_SIZE	8 // size of the tile for blocking
+#define TILE_SIZE	32 // size of the tile for blocking
 
 /**
  * @brief 		Performs matrix multiplication of two matrices.
@@ -105,11 +105,20 @@ void tile_mat_mul(double *A, double *B, double *C, int size, int tile_size) {
  * @note 		You can assume that the matrices are square matrices.
 */
 void simd_mat_mul(double *A, double *B, double *C, int size) {
-//----------------------------------------------------- Write your code here ----------------------------------------------------------------
-    
+	for (int i = 0; i < size; i++) {
+		for (int k = 0; k < size; k++) {
+			__m256d vectorA = _mm256_broadcast_sd(&A[i * size + k]);
+			for (int j = 0; j < size; j += 4) {
+				// C[i * size + j] += A[i * size + k] * B[k * size + j]
+				__m256d vectorC = _mm256_loadu_pd(&C[i * size + j]);
+				__m256d vectorB = _mm256_loadu_pd(&B[k * size + j]);
 
-//-------------------------------------------------------------------------------------------------------------------------------------------
-    
+				__m256d mul = _mm256_mul_pd(vectorA, vectorB);
+				vectorC = _mm256_add_pd(vectorC, mul);	
+				_mm256_storeu_pd(&C[i * size + j], vectorC);
+			}
+		}
+	}	
 }
 
 /**

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Run perf and capture output
+sudo sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
+OUTPUT=$(sudo perf stat -e cpu_core/L1-dcache-load-misses/,cpu_core/L1-icache-load-misses/,cpu_core/instructions/,cpu_core/branch-instructions/,cpu_core/branch-misses/ taskset -c 3 ./mat_mul/$1 $2 2>&1)
+
+# Extract values
+L1I_MISSES=$(echo "$OUTPUT" | grep "cpu_core/L1-icache-load-misses/" | awk '{print $1}' | tr -d ',')
+BRANCH_INSTRUCTIONS=$(echo "$OUTPUT" | grep "cpu_core/branch-instructions" | awk '{print $1}' | tr -d ',')
+BRANCH_MISSES=$(echo "$OUTPUT" | grep "cpu_core/branch-misses" | awk '{print $1}' | tr -d ',')
+MISSES=$(echo "$OUTPUT" | grep "cpu_core/L1-dcache-load-misses/" | awk '{print $1}' | tr -d ',')
+INSTR=$(echo "$OUTPUT" | grep "cpu_core/instructions/" | awk '{print $1}' | tr -d ',')
+
+# Compute MPKI = (misses / instructions) * 1000
+if [[ -n "$MISSES" && -n "$INSTR" && "$INSTR" -ne 0 ]]; then
+    MPKI=$(echo "scale=4; $MISSES/($INSTR/1000)" | bc)
+    BRANCH_MISSRATE=$(echo "scale=4; $BRANCH_MISSES*100/$BRANCH_INSTRUCTIONS" | bc)
+    echo "L1D load-cache Misses: $MISSES"
+    echo "L1I load-cache Misses: $L1I_MISSES"
+    echo "Instructions: $INSTR"
+    echo "MPKI: $MPKI"
+    echo "BRANCH MISSRATE: $BRANCH_MISSRATE"
+else
+    echo "Failed to extract counters"
+fi
+

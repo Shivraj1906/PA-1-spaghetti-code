@@ -31,13 +31,13 @@
  */
 void naive_mat_mul(double *A, double *B, double *C, int size) {
 
-	for (int i = 0; i < size; i++) {
-		for (int j = 0; j < size; j++) {
-			for (int k = 0; k < size; k++) {
-				C[i * size + j] += A[i * size + k] * B[k * size + j];
-			}
-		}
-	}
+	// for (int i = 0; i < size; i++) {
+	// 	for (int j = 0; j < size; j++) {
+	// 		for (int k = 0; k < size; k++) {
+	// 			C[i * size + j] += A[i * size + k] * B[k * size + j];
+	// 		}
+	// 	}
+	// }
 }
 
 /**
@@ -50,15 +50,11 @@ void naive_mat_mul(double *A, double *B, double *C, int size) {
 void loop_opt_mat_mul(double *A, double *B, double *C, int size){
 	for (int i = 0; i < size; i++) {
 		for (int k = 0; k < size; k++) {
-			for (int j = 0; j < size; j += 8) {
+			for (int j = 0; j < size; j += 4) {
 				C[i * size + j] += A[i * size + k] * B[k * size + j];
 				C[i * size + j + 1] += A[i * size + k] * B[k * size + j + 1];
 				C[i * size + j + 2] += A[i * size + k] * B[k * size + j + 2];
 				C[i * size + j + 3] += A[i * size + k] * B[k * size + j + 3];
-				C[i * size + j + 4] += A[i * size + k] * B[k * size + j + 4];
-				C[i * size + j + 5] += A[i * size + k] * B[k * size + j + 5];
-				C[i * size + j + 6] += A[i * size + k] * B[k * size + j + 6];
-				C[i * size + j + 7] += A[i * size + k] * B[k * size + j + 7];
 			}
 		}
 	}
@@ -82,13 +78,12 @@ void tile_mat_mul(double *A, double *B, double *C, int size, int tile_size) {
 	// (1, 0) (1, 1)
 	// each block of size (tile_size, tile_size)
 	for (int i = 0; i < size; i += tile_size) {
-		for(int j = 0; j < size; j += tile_size) {
-			for (int k = 0; k < size; k += tile_size) {
-				for (int ii = i; ii < i + tile_size; ii++) {
-					for (int kk = k; kk < k + tile_size; kk++) {
-						double tempA = A[ii * size + kk];
-						for (int jj = j; jj < j + tile_size; jj++) {
-							C[ii * size + jj] += tempA * B[kk * size + jj];
+		for(int k = 0; k < size; k += tile_size) {
+			for (int j = 0; j < size; j += tile_size) {
+				for(int ii = i; ii < i + tile_size; ii++) {
+					for(int kk = k; kk < k + tile_size; kk++) {
+						for(int jj = j; jj < j + tile_size; jj++) {
+							C[ii * size + jj] += A[ii * size + kk] * B[kk * size + jj];
 						}
 					}
 				}
@@ -110,12 +105,11 @@ void simd_mat_mul(double *A, double *B, double *C, int size) {
 		for (int k = 0; k < size; k++) {
 			__m256d vectorA = _mm256_broadcast_sd(&A[i * size + k]);
 			for (int j = 0; j < size; j += 4) {
-				// C[i * size + j] += A[i * size + k] * B[k * size + j]
 				__m256d vectorC = _mm256_loadu_pd(&C[i * size + j]);
 				__m256d vectorB = _mm256_loadu_pd(&B[k * size + j]);
 
 				__m256d mul = _mm256_mul_pd(vectorA, vectorB);
-				vectorC = _mm256_add_pd(vectorC, mul);	
+				vectorC = _mm256_add_pd(vectorC, mul);
 				_mm256_storeu_pd(&C[i * size + j], vectorC);
 			}
 		}
@@ -136,10 +130,10 @@ void combination_mat_mul(double *A, double *B, double *C, int size, int tile_siz
 	for (int i = 0; i < size; i += tile_size) {
 		for(int j = 0; j < size; j += tile_size) {
 			for (int k = 0; k < size; k += tile_size) {
-				for (int ii = i; ii < i + tile_size; ii++) {
-					for (int kk = k; kk < k + tile_size; kk++) {
+				for(int ii = i; ii < i + tile_size; ii++) {
+					for(int kk = k; kk < k + tile_size; kk++) {
 						__m256d vectorA = _mm256_broadcast_sd(&A[ii * size + kk]);
-						for (int jj = j; jj < j + tile_size; jj += 4) {
+						for(int jj = j; jj < j + tile_size; jj += 4) {
 							__m256d vectorC = _mm256_loadu_pd(&C[ii * size + jj]);
 							__m256d vectorB = _mm256_loadu_pd(&B[kk * size + jj]);
 

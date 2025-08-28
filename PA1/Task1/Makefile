@@ -14,7 +14,7 @@ combination: mat_mul
 	g++ mat_mul.c -mavx -D OPTIMIZE_COMBINED -o $(BIN)/$@
 
 all: mat_mul
-	g++ mat_mul.c -mavx -D OPTIMIZE_TILING -D OPTIMIZE_SIMD -D OPTIMIZE_LOOP_OPT -D OPTIMIZE_COMBINED -o $(BIN)/$@
+	g++ mat_mul.c -mavx -march=native -D OPTIMIZE_TILING -D OPTIMIZE_SIMD -D OPTIMIZE_LOOP_OPT -D OPTIMIZE_COMBINED -o $(BIN)/$@
 
 clean:
 	@rm -rf $(BIN)

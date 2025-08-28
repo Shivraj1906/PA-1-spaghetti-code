@@ -37,10 +37,13 @@ Matrix MatrixOperation::ReorderedMatMul(const Matrix& A, const Matrix& B) {
 	
 	Matrix C(n,m);
 	
-//----------------------------------------------------- Write your code here ----------------------------------------------------------------
-    
-
-//-------------------------------------------------------------------------------------------------------------------------------------------
+	for(int i = 0; i < n ; i++) {
+		for (int l = 0 ; l < k; l++) {
+			for(int j = 0; j < m; j++) {
+				C(i,j) += A(i,l) * B(l,j);
+			}
+		}
+	}
 
 
 	return C;
@@ -59,10 +62,17 @@ Matrix MatrixOperation::UnrolledMatMul(const Matrix& A, const Matrix& B) {
     Matrix C(n, m);
 
     const int UNROLL = 4;
-//----------------------------------------------------- Write your code here ----------------------------------------------------------------
-    
 
-//-------------------------------------------------------------------------------------------------------------------------------------------
+	for(int i = 0; i < n ; i++) {
+		for (int l = 0 ; l < k; l++) {
+			for(int j = 0; j < m; j += UNROLL) {
+				C(i,j + 0) += A(i,l) * B(l,j + 0);
+				C(i,j + 1) += A(i,l) * B(l,j + 1);
+				C(i,j + 2) += A(i,l) * B(l,j + 2);
+				C(i,j + 3) += A(i,l) * B(l,j + 3);
+			}
+		}
+	}
 
     return C;
 }
@@ -78,14 +88,21 @@ Matrix MatrixOperation::TiledMatMul(const Matrix& A, const Matrix& B) {
     }
 
     Matrix C(n, m);
-    const int T = 128;   // tile size
-	int i_max = 0;
-	int k_max = 0;
-	int j_max = 0;
-//----------------------------------------------------- Write your code here ----------------------------------------------------------------
-    
-
-//-------------------------------------------------------------------------------------------------------------------------------------------
+    const int T = 64;   // tile size
+	for (int i = 0; i < n; i += T) {
+		for(int l = 0; l < k; l += T) {
+			for (int j = 0; j < m; j += T) {
+				for(int ii = i; ii < i + T; ii++) {
+					for(int kk = l; kk < l + T; kk++) {
+						for(int jj = j; jj < j + T; jj++) {
+							// C[ii * n + jj] += A[ii * n + kk] * B[kk * k + jj];
+							C(ii, jj) += A(ii, kk) * B(kk, jj);
+						}
+					}
+				}
+			}
+		}
+	}
 
     return C;
 }
@@ -99,13 +116,21 @@ Matrix MatrixOperation::VectorizedMatMul(const Matrix& A, const Matrix& B) {
     if (k != B.getRows()) {
         throw std::invalid_argument("Matrix dimensions don't match for multiplication");
     }
-
     Matrix C(n, m);
-//----------------------------------------------------- Write your code here ----------------------------------------------------------------
-    
+	int size = n;
+	for (int i = 0; i < size; i++) {
+		for (int k = 0; k < size; k++) {
+			__m256d vectorA = _mm256_broadcast_sd(&A(i, k));
+			for (int j = 0; j < size; j += 4) {
+				__m256d vectorC = _mm256_loadu_pd(&C(i, j));
+				__m256d vectorB = _mm256_loadu_pd(&B(k, j));
 
-//-------------------------------------------------------------------------------------------------------------------------------------------
-
+				__m256d mul = _mm256_mul_pd(vectorA, vectorB);
+				vectorC = _mm256_add_pd(vectorC, mul);
+				_mm256_storeu_pd(&C(i, j), vectorC);
+			}
+		}
+	}	
     return C;
 }
 
@@ -114,21 +139,15 @@ Matrix MatrixOperation::Transpose(const Matrix& A) {
 	size_t rows = A.getRows();
 	size_t cols = A.getCols();
 	Matrix result(cols, rows);
-
-	for (size_t i = 0; i < rows; ++i) {
-		for (size_t j = 0; j < cols; ++j) {
-			result(j, i) = A(i, j);
+	int tile_size = 128;
+	for (size_t i = 0; i < rows; i += tile_size) {
+		for (size_t j = 0; j < cols; j += tile_size) {
+			for (size_t ii = i; ii < i + tile_size; ii++) {
+				for (size_t jj = j; jj < j + tile_size; jj++) {
+					result(jj, ii) = A(ii, jj);
+				}
+			}
 		}
 	}
-
-	// Optimized transpose using blocking for better cache performance
-	// This is a simple implementation, more advanced techniques can be applied
-	// Write your code here and commnent the above code
-//----------------------------------------------------- Write your code here ----------------------------------------------------------------
-    
-
-//-------------------------------------------------------------------------------------------------------------------------------------------
-
-	
 	return result;
 }

@@ -4,3 +4,6 @@ simd
 a.out
 combination
 all
+main
+*.o
+*.d

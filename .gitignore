@@ -7,3 +7,4 @@ all
 main
 *.o
 *.d
+emb

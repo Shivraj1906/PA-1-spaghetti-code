@@ -9,8 +9,8 @@
 using namespace std;
 using namespace std::chrono;
 
-const int embedding_table_size = 1000000;
-const int embedding_dim = 128;
+const int embedding_table_size = 5000000; // 1 million
+const int embedding_dim = 64;
 const int input_size = 720;
 const int num_bags = 20;
 
@@ -26,7 +26,7 @@ long long run_with_prefetching(vector<float>& embedding_table, const vector<int>
 
     auto start = high_resolution_clock::now();
     vector<vector<float>> output;
-    int prefetch_distance = 1;
+    int prefetch_distance = 4;
 
     for (size_t i = 0; i < offsets.size(); ++i) {
         int start_idx = offsets[i];

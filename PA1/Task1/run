@@ -1,26 +1,76 @@
 #!/bin/bash
 
-# Run perf and capture output
-sudo sync; echo 3 | sudo tee /proc/sys/vm/drop_caches
-OUTPUT=$(sudo perf stat -e cpu_core/L1-dcache-load-misses/,cpu_core/L1-icache-load-misses/,cpu_core/instructions/,cpu_core/branch-instructions/,cpu_core/branch-misses/ taskset -c 3 ./mat_mul/$1 $2 2>&1)
+BINARY=$1
+SIZES=(256 512 1024 2048 4096)
 
-# Extract values
-L1I_MISSES=$(echo "$OUTPUT" | grep "cpu_core/L1-icache-load-misses/" | awk '{print $1}' | tr -d ',')
-BRANCH_INSTRUCTIONS=$(echo "$OUTPUT" | grep "cpu_core/branch-instructions" | awk '{print $1}' | tr -d ',')
-BRANCH_MISSES=$(echo "$OUTPUT" | grep "cpu_core/branch-misses" | awk '{print $1}' | tr -d ',')
-MISSES=$(echo "$OUTPUT" | grep "cpu_core/L1-dcache-load-misses/" | awk '{print $1}' | tr -d ',')
-INSTR=$(echo "$OUTPUT" | grep "cpu_core/instructions/" | awk '{print $1}' | tr -d ',')
+for size in "${SIZES[@]}"; do
+    if [ "$size" -eq 4096 ]; then
+        RUNS=2
+    elif [ "$size" -eq 2048 ]; then
+        RUNS=3
+    else
+        RUNS=5
+    fi
 
-# Compute MPKI = (misses / instructions) * 1000
-if [[ -n "$MISSES" && -n "$INSTR" && "$INSTR" -ne 0 ]]; then
-    MPKI=$(echo "scale=4; $MISSES/($INSTR/1000)" | bc)
-    BRANCH_MISSRATE=$(echo "scale=4; $BRANCH_MISSES*100/$BRANCH_INSTRUCTIONS" | bc)
-    echo "L1D load-cache Misses: $MISSES"
-    echo "L1I load-cache Misses: $L1I_MISSES"
-    echo "Instructions: $INSTR"
-    echo "MPKI: $MPKI"
-    echo "BRANCH MISSRATE: $BRANCH_MISSRATE"
-else
-    echo "Failed to extract counters"
-fi
+    echo "=== Running size $size ($RUNS runs) ===" >&2
+
+    total_L1D=0
+    total_L1I=0
+    total_INSTR=0
+    total_BRANCHES=0
+    total_BRANCH_MISSES=0
+    total_MPKI=0
+    total_BMISS_RATE=0
+    total_PAGE_FAULTS=0
+
+    for i in $(seq 1 $RUNS); do
+        echo "   -> Run $i/$RUNS for size $size" >&2
+
+        sudo sync; echo 3 | sudo tee /proc/sys/vm/drop_caches > /dev/null
+	OUTPUT=$(sudo perf stat -e cpu_core/L1-dcache-load-misses/,cpu_core/L1-icache-load-misses/,cpu_core/instructions/,cpu_core/branch-instructions/,cpu_core/branch-misses/,page-faults taskset -c 3 ./mat_mul/$1 $size 2>&1)
+        L1D=$(echo "$OUTPUT" | grep "cpu_core/L1-dcache-load-misses/" | awk '{print $1}' | tr -d ',')
+        L1I=$(echo "$OUTPUT" | grep "cpu_core/L1-icache-load-misses/" | awk '{print $1}' | tr -d ',')
+        INSTR=$(echo "$OUTPUT" | grep "cpu_core/instructions/" | awk '{print $1}' | tr -d ',')
+        BRANCHES=$(echo "$OUTPUT" | grep "cpu_core/branch-instructions" | awk '{print $1}' | tr -d ',')
+        BMISS=$(echo "$OUTPUT" | grep "cpu_core/branch-misses/" | awk '{print $1}' | tr -d ',')
+        PAGE_FAULTS=$(echo "$OUTPUT" | grep "page-faults" | awk '{print $1}' | tr -d ',')
+
+        if [[ -n "$L1D" && -n "$INSTR" && "$INSTR" -ne 0 ]]; then
+            MPKI=$(echo "scale=4; $L1D/($INSTR/1000)" | bc)
+            BRMISS_RATE=$(echo "scale=4; $BMISS*100/$BRANCHES" | bc)
+        else
+            MPKI=0
+            BRMISS_RATE=0
+        fi
+
+        total_L1D=$(echo "$total_L1D + $L1D" | bc)
+        total_L1I=$(echo "$total_L1I + $L1I" | bc)
+        total_INSTR=$(echo "$total_INSTR + $INSTR" | bc)
+        total_BRANCHES=$(echo "$total_BRANCHES + $BRANCHES" | bc)
+        total_BRANCH_MISSES=$(echo "$total_BRANCH_MISSES + $BMISS" | bc)
+        total_MPKI=$(echo "$total_MPKI + $MPKI" | bc)
+        total_BMISS_RATE=$(echo "$total_BMISS_RATE + $BRMISS_RATE" | bc)
+	total_PAGE_FAULTS=$(echo "$total_BMISS_RATE + $PAGE_FAULTS" | bc)
+    done
+
+    avg_L1D=$(echo "scale=2; $total_L1D/$RUNS" | bc)
+    avg_L1I=$(echo "scale=2; $total_L1I/$RUNS" | bc)
+    avg_INSTR=$(echo "scale=2; $total_INSTR/$RUNS" | bc)
+    avg_BRANCHES=$(echo "scale=2; $total_BRANCHES/$RUNS" | bc)
+    avg_BMISS=$(echo "scale=2; $total_BRANCH_MISSES/$RUNS" | bc)
+    avg_MPKI=$(echo "scale=4; $total_MPKI/$RUNS" | bc)
+    avg_BMISS_RATE=$(echo "scale=4; $total_BMISS_RATE/$RUNS" | bc)
+    avg_PAGE_FAULTS=$(echo "scale=4; $total_PAGE_FAULTS/$RUNS" | bc)
+
+    echo "Matrix Size: $size"
+    echo "Avg L1D load misses: $avg_L1D"
+    echo "Avg L1I load misses: $avg_L1I"
+    echo "Avg Instructions: $avg_INSTR"
+    echo "Avg Branch Instructions: $avg_BRANCHES"
+    echo "Avg Branch Misses: $avg_BMISS"
+    echo "Avg MPKI: $avg_MPKI"
+    echo "Avg Branch Miss Rate (%): $avg_BMISS_RATE"
+    echo "Avg Page Faults: $avg_PAGE_FAULTS"
+    echo ""
+done
 

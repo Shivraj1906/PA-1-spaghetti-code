@@ -61,7 +61,7 @@ Matrix MatrixOperation::UnrolledMatMul(const Matrix& A, const Matrix& B) {
 
     Matrix C(n, m);
 
-    const int UNROLL = 4;
+    const int UNROLL = 16;
 
 	for(int i = 0; i < n ; i++) {
 		for (int l = 0 ; l < k; l++) {
@@ -70,6 +70,18 @@ Matrix MatrixOperation::UnrolledMatMul(const Matrix& A, const Matrix& B) {
 				C(i,j + 1) += A(i,l) * B(l,j + 1);
 				C(i,j + 2) += A(i,l) * B(l,j + 2);
 				C(i,j + 3) += A(i,l) * B(l,j + 3);
+				C(i,j + 4) += A(i,l) * B(l,j + 4);
+				C(i,j + 5) += A(i,l) * B(l,j + 5);
+				C(i,j + 6) += A(i,l) * B(l,j + 6);
+				C(i,j + 7) += A(i,l) * B(l,j + 7);
+				C(i,j + 8) += A(i,l) * B(l,j + 8);
+				C(i,j + 8) += A(i,l) * B(l,j + 9);
+				C(i,j + 9) += A(i,l) * B(l,j + 10);
+				C(i,j + 10) += A(i,l) * B(l,j + 11);
+				C(i,j + 11) += A(i,l) * B(l,j + 12);
+				C(i,j + 13) += A(i,l) * B(l,j + 13);
+				C(i,j + 14) += A(i,l) * B(l,j + 14);
+				C(i,j + 15) += A(i,l) * B(l,j + 15);
 			}
 		}
 	}
@@ -88,7 +100,7 @@ Matrix MatrixOperation::TiledMatMul(const Matrix& A, const Matrix& B) {
     }
 
     Matrix C(n, m);
-    const int T = 64;   // tile size
+    const int T = 32;   // tile size
 	for (int i = 0; i < n; i += T) {
 		for(int l = 0; l < k; l += T) {
 			for (int j = 0; j < m; j += T) {

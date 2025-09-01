@@ -9,7 +9,7 @@ int counter =0 ;
 int main(){
 
 	// Run matrix multiplication benchmark
-	PerformanceBenchmark::benchmarkMatrixMultiplication(512);
+	PerformanceBenchmark::benchmarkMatrixMultiplication(4096);
 	
 	Matrix A(4, 4);
 	A.xavierInit();

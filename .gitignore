@@ -8,3 +8,12 @@ main
 *.o
 *.d
 emb
+*.csv
+master
+master_params
+*.txt
+avg_speedup
+run
+params
+runtimes
+mat_mul

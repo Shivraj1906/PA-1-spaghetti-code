@@ -48,16 +48,44 @@ void naive_mat_mul(double *A, double *B, double *C, int size) {
  * @param 		size 		dimension of the matrices
  */
 void loop_opt_mat_mul(double *A, double *B, double *C, int size){
-	for (int i = 0; i < size; i++) {
-		for (int k = 0; k < size; k++) {
-			for (int j = 0; j < size; j += 4) {
-				C[i * size + j] += A[i * size + k] * B[k * size + j];
-				C[i * size + j + 1] += A[i * size + k] * B[k * size + j + 1];
-				C[i * size + j + 2] += A[i * size + k] * B[k * size + j + 2];
-				C[i * size + j + 3] += A[i * size + k] * B[k * size + j + 3];
-			}
-		}
-	}
+	// for (int i = 0; i < size; i++) {
+	// 	for (int k = 0; k < size; k++) {
+	// 		for (int j = 0; j < size; j += 32) {
+	// 			C[i * size + j] += A[i * size + k] * B[k * size + j];
+	// 			C[i * size + j + 1] += A[i * size + k] * B[k * size + j + 1];
+	// 			C[i * size + j + 2] += A[i * size + k] * B[k * size + j + 2];
+	// 			C[i * size + j + 3] += A[i * size + k] * B[k * size + j + 3];
+	// 			C[i * size + j + 4] += A[i * size + k] * B[k * size + j + 4];
+	// 			C[i * size + j + 5] += A[i * size + k] * B[k * size + j + 5];
+	// 			C[i * size + j + 6] += A[i * size + k] * B[k * size + j + 6];
+	// 			C[i * size + j + 7] += A[i * size + k] * B[k * size + j + 7];
+	// 			C[i * size + j + 8] += A[i * size + k] * B[k * size + j + 8];
+	// 			C[i * size + j + 9] += A[i * size + k] * B[k * size + j + 9];
+	// 			C[i * size + j + 10] += A[i * size + k] * B[k * size + j + 10];
+	// 			C[i * size + j + 11] += A[i * size + k] * B[k * size + j + 11];
+	// 			C[i * size + j + 12] += A[i * size + k] * B[k * size + j + 12];
+	// 			C[i * size + j + 13] += A[i * size + k] * B[k * size + j + 13];
+	// 			C[i * size + j + 14] += A[i * size + k] * B[k * size + j + 14];
+	// 			C[i * size + j + 15] += A[i * size + k] * B[k * size + j + 15];
+	// 			C[i * size + j + 16] += A[i * size + k] * B[k * size + j + 16];
+	// 			C[i * size + j + 17] += A[i * size + k] * B[k * size + j + 17];
+	// 			C[i * size + j + 18] += A[i * size + k] * B[k * size + j + 18];
+	// 			C[i * size + j + 19] += A[i * size + k] * B[k * size + j + 19];
+	// 			C[i * size + j + 20] += A[i * size + k] * B[k * size + j + 20];
+	// 			C[i * size + j + 21] += A[i * size + k] * B[k * size + j + 21];
+	// 			C[i * size + j + 22] += A[i * size + k] * B[k * size + j + 22];
+	// 			C[i * size + j + 23] += A[i * size + k] * B[k * size + j + 23];
+	// 			C[i * size + j + 24] += A[i * size + k] * B[k * size + j + 24];
+	// 			C[i * size + j + 25] += A[i * size + k] * B[k * size + j + 25];
+	// 			C[i * size + j + 26] += A[i * size + k] * B[k * size + j + 26];
+	// 			C[i * size + j + 27] += A[i * size + k] * B[k * size + j + 27];
+	// 			C[i * size + j + 28] += A[i * size + k] * B[k * size + j + 28];
+	// 			C[i * size + j + 29] += A[i * size + k] * B[k * size + j + 29];
+	// 			C[i * size + j + 30] += A[i * size + k] * B[k * size + j + 30];
+	// 			C[i * size + j + 31] += A[i * size + k] * B[k * size + j + 31];
+	// 		}
+	// 	}
+	// }
 }
 
 
@@ -183,7 +211,7 @@ int main(int argc, char **argv) {
 		naive_mat_mul(A, B, C, size);
 		auto end = std::chrono::high_resolution_clock::now();
 		auto time_naive_mat_mul = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-		printf("Normal matrix multiplication took %ld ms to execute \n\n", time_naive_mat_mul);
+		printf("Normal matrix mul took %ld ms to execute \n\n", time_naive_mat_mul);
 
 	#ifdef OPTIMIZE_LOOP_OPT
 		// Task 1a: perform matrix multiplication with loop optimization
